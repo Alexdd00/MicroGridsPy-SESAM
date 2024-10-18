@@ -172,6 +172,7 @@ def EnergyParams(TimeSeries, params):
 def EnergySystemCost(params, Costs, emissioni):
 
     import pandas as pd
+    import numpy as np
 
     # Importing parameters
     Demand_df = pd.DataFrame(params['Demand'])
@@ -333,7 +334,7 @@ def EnergySystemCost(params, Costs, emissioni):
         NPC_over_years = pd.concat([NPC_over_years, NPC], axis=1)
 
         #LCOE
-        Demand = sum(Demand_df.iloc[t,y] for t in range(periods))
+        Demand = np.sum(Demand_df.iloc[:,y].values)
         LCOE = pd.DataFrame(['LCOE', 'USD/MWh', ((Net_Present_Cost_value.iloc[y,0])/Demand)*1e6]).T.set_index([0,1])
         LCOE.index.names = ['Cost item', 'Unit']
         LCOE.columns = [f'Year {y}']
@@ -433,12 +434,17 @@ def Time_Series(params,risultato,emissioni):
     Fuel_LHV = pd.DataFrame(params['Fuel_LHV'])
     StartDate = params['StartDate']
     Generator_Production = pd.DataFrame(risultato['Generator_Production'], index=index, columns=range(n_generators))
-    Battery_Inflow = pd.DataFrame(risultato['Battery_Inflow'])
-    Battery_Outflow = pd.DataFrame(risultato['Battery_Outflow'])
+    Battery_Inflow = risultato['Battery_Inflow']
+    Battery_Outflow = risultato['Battery_Outflow']
+    # Battery_Inflow = pd.DataFrame(risultato['Battery_Inflow'])
+    # Battery_Outflow = pd.DataFrame(risultato['Battery_Outflow'])
     Battery_Outflow = Battery_Outflow.clip(lower=0)
-    Lost_Load = pd.DataFrame(risultato['Lost_Load'])
-    Curtailment = pd.DataFrame(risultato['Energy_Curtailment'])
-    Battery_SOC = pd.DataFrame(risultato['Battery_SOC'])
+    Lost_Load = risultato['Lost_Load']
+    Curtailment = risultato['Energy_Curtailment']
+    Battery_SOC = risultato['Battery_SOC']
+    # Lost_Load = pd.DataFrame(risultato['Lost_Load'])
+    # Curtailment = pd.DataFrame(risultato['Energy_Curtailment'])
+    # Battery_SOC = pd.DataFrame(risultato['Battery_SOC'])
     FUEL_emission = pd.DataFrame(emissioni['Fuel_emission_specific'], index=index, columns=range(n_generators))
     gen_eff = pd.DataFrame(params['Gen_eff'])
     partial_load = pd.DataFrame(risultato['Partial_load'], index=index, columns=range(n_generators))
@@ -503,32 +509,38 @@ def Time_Series(params,risultato,emissioni):
             component_header += ['']
             unit_header      += ['Wh']
 
-            if Generator_Partial_Load==1:
+            if Generator_Partial_Load==0:
 
                 # Fuel consumption and emission of generators without partial load 
                 for g in range(n_generators):
                     FUEL = pd.DataFrame([Generator_Production.loc[(y,t),g]/Fuel_LHV.iloc[g,0]/(Generator_Efficiency.iloc[g,0]) for t in range(periods)])
-                    FUEL.fillna(0, inplace=True) 
-                    FUEL.replace([np.inf, -np.inf], 0, inplace=True)
+                    #FUEL.fillna(0, inplace=True) 
+                    #FUEL.replace([np.inf, -np.inf], 0, inplace=True)
                     TimeSeries[y] = pd.concat([TimeSeries[y], FUEL], axis=1)
                     flow_header      += ['Fuel Consumption']
                     component_header += [Fuel_Names[g]]
                     unit_header      += ['Lt']
 
-            if Generator_Partial_Load==0:
+            if Generator_Partial_Load==1:
 
                 # Fuel consumption and emission of generators with partial load
-                index = pd.MultiIndex.from_product([range(years), range(periods)], names=['year', 'period'])
+                #index = pd.MultiIndex.from_product([range(years), range(periods)], names=['year', 'period'])
 
                 Generator_Efficiency = pd.DataFrame(0, index=index, columns=range(n_generators))
-                      
+                     
                 for g in range(n_generators):
                     for t in range(periods):
                         indice[y] = int(partial_load.loc[(y,t),g])
                         Generator_Efficiency.loc[(y,t),g] = gen_eff.iloc[indice[y], g+1]
-                    FUEL = pd.DataFrame([Generator_Production.loc[(y,t),g]/Fuel_LHV.iloc[g,0]/(Generator_Efficiency.loc[(y,t),g]/100) for t in range(periods)])
-                    FUEL.fillna(0, inplace=True) 
-                    FUEL.replace([np.inf, -np.inf], 0, inplace=True)
+                    FUEL = pd.DataFrame(0, index=range(periods), columns=[g])
+                    for t in range(periods):
+                        if Generator_Efficiency.loc[(y, t), g] == 0:
+                            FUEL.loc[t, g] = 0
+                        else:
+                            FUEL.loc[t, g] = Generator_Production.loc[(y, t), g] / Fuel_LHV.iloc[g, 0] / (Generator_Efficiency.loc[(y, t), g] / 100)
+                    #FUEL = pd.DataFrame([Generator_Production.loc[(y,t),g]/Fuel_LHV.iloc[g,0]/(Generator_Efficiency.loc[(y,t),g]/100) for t in range(periods)])
+                    #FUEL.fillna(0, inplace=True) 
+                    #FUEL.replace([np.inf, -np.inf], 0, inplace=True)
                     TimeSeries[y] = pd.concat([TimeSeries[y], FUEL], axis=1)
                     flow_header      += ['Fuel Consumption']
                     component_header += [Fuel_Names[g]]

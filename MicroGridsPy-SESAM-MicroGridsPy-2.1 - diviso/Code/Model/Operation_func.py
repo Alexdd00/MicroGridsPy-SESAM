@@ -5,6 +5,9 @@ Created on Mon Mar 18 15:44:40 2024
 @author: aless
 """
 
+from line_profiler import LineProfiler
+
+#@profile
 def Operation(params):
 
     import pandas as pd
@@ -62,7 +65,7 @@ def Operation(params):
     if Degradation_BESS==1:
         alpha = params['Alpha'][:total_value]
         beta = params['Beta'][:total_value]
-        index = pd.MultiIndex.from_product([range(years), range(periods)], names=['year', 'period'])
+        #index = pd.MultiIndex.from_product([range(years), range(periods)], names=['year', 'period'])
 
         array_alpha = np.array(alpha)
         array_beta = np.array(beta)
@@ -391,17 +394,17 @@ def Operation(params):
                 
             ...
     
-    res_df = pd.DataFrame(res)
-    Battery_Outflow_df = pd.DataFrame(Battery_Outflow) 
-    Battery_Bank_Energy_df = pd.DataFrame(Battery_Bank_Energy)
+    #res_df = pd.DataFrame(res)
+    #Battery_Outflow_df = pd.DataFrame(Battery_Outflow) 
+    #Battery_Bank_Energy_df = pd.DataFrame(Battery_Bank_Energy)
     
     
-    Energy_Curtailment_df = pd.DataFrame(Energy_Curtailment)
-    Lost_Load_df = pd.DataFrame(Lost_Load)
-    Battery_Inflow_df = pd.DataFrame(Battery_Inflow) 
-    Battery_SOC_dfa = pd.DataFrame(Battery_SOC_df)
+    #Energy_Curtailment_df = pd.DataFrame(Energy_Curtailment)
+    #Lost_Load_df = pd.DataFrame(Lost_Load)
+    #Battery_Inflow_df = pd.DataFrame(Battery_Inflow) 
+    #Battery_SOC_dfa = pd.DataFrame(Battery_SOC_df)
     
-    index = pd.MultiIndex.from_product([range(years), range(periods)], names=['year', 'period'])
+    #index = pd.MultiIndex.from_product([range(years), range(periods)], names=['year', 'period'])
 
     partial_load = pd.DataFrame(0, index=index, columns=range(n_generators))
     load = pd.DataFrame(0, index=index, columns=range(n_generators))
@@ -413,19 +416,19 @@ def Operation(params):
 
     for y in range(years):
         if y==years_selected:
-            lost= sum(Lost_Load_df.iloc[t,y] for t in range(periods))*100/sum(Demand_df.iloc[t,y] for t in range(periods))
-            curt= sum(Energy_Curtailment_df.iloc[t,y] for t in range(periods))*100/sum(Demand_df.iloc[t,y] for t in range(periods))
+            lost= sum(Lost_Load.iloc[t,y] for t in range(periods))*100/sum(Demand_df.iloc[t,y] for t in range(periods))
+            curt= sum(Energy_Curtailment.iloc[t,y] for t in range(periods))*100/sum(Demand_df.iloc[t,y] for t in range(periods))
     
     #Exporting data
     risultato={
-        'Battery_Outflow':Battery_Outflow_df,
-        'Battery_Inflow':Battery_Inflow_df,
-        'Energy_Curtailment':Energy_Curtailment_df,
-        'Lost_Load':Lost_Load_df,
-        'res':res_df,
+        'Battery_Outflow':Battery_Outflow,
+        'Battery_Inflow':Battery_Inflow,
+        'Energy_Curtailment':Energy_Curtailment,
+        'Lost_Load':Lost_Load,
+        'res':res,
         'Generator_Production':Generator_energies,
         'RES_Production':RES_Energy_Production_dfa,
-        'Battery_SOC': Battery_SOC_dfa,
+        'Battery_SOC': Battery_SOC_df,
         'Partial_load': partial_load,
         'LL': lost,
         'CURT': curt

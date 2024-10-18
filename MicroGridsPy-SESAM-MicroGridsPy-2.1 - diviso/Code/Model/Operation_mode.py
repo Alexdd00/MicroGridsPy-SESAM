@@ -2,12 +2,13 @@
 import time
 from Operation_mode_SENZAGRID_ottimizzato import initialize
 from Operation_func import Operation
+#from line_profiler import LineProfiler
 #from prova_ottimo import Operation
 from Operation_costo import Operation_Cost
 from Operation_emissioni import Operation_Emission
 from Operation_plotti import DispatchPlot, SizePlot
 from Operation_result import PrintResults, ResultsSummary, Time_Series
-
+#%
 start = time.time()         # Start time counter
 params = initialize()
 #%
